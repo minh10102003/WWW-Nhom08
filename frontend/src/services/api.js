@@ -95,6 +95,14 @@ export const orderApi = {
   getById: (id) => api.get(`/don-hang/${id}`),
 }
 
+export const vnpayApi = {
+  createPayment: (amount, orderId, bankCode = '', language = 'vn') => {
+    return api.post('/vnpay/create-payment', null, {
+      params: { amount, orderId, bankCode, language }
+    })
+  },
+}
+
 export const contactApi = {
   create: (data) => api.post('/createContact', data),
 }

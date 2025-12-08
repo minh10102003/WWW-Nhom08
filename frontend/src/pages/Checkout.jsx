@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { orderApi } from '../services/api'
+import { orderApi, vnpayApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 
@@ -23,25 +23,57 @@ const Checkout = () => {
     })
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, method) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const response = await orderApi.create(formData)
+      // Tạo đơn hàng với phương thức thanh toán
+      const orderData = {
+        ...formData,
+        paymentMethod: method
+      }
+      
+      const response = await orderApi.create(orderData)
       if (response.data && response.data.status === 'success') {
-        // Reload cart to clear items after successful checkout
-        await refreshCart()
-        navigate('/thank-you')
+        const order = response.data.data
+        
+        // Nếu thanh toán online, chuyển đến VNPay
+        if (method === 'online') {
+          try {
+            const vnpayResponse = await vnpayApi.createPayment(
+              order.tongGiaTri,
+              order.id,
+              '', // bankCode - để trống để chọn tất cả
+              'vn' // language
+            )
+            
+            if (vnpayResponse.data && vnpayResponse.data.code === '00') {
+              // Chuyển hướng đến trang thanh toán VNPay
+              window.location.href = vnpayResponse.data.data
+            } else {
+              alert('Không thể tạo link thanh toán. Vui lòng thử lại.')
+              setLoading(false)
+            }
+          } catch (vnpayError) {
+            console.error('VNPay error:', vnpayError)
+            alert('Lỗi khi tạo link thanh toán VNPay: ' + (vnpayError.response?.data?.message || vnpayError.message))
+            setLoading(false)
+          }
+        } else {
+          // Thanh toán COD - xóa cart và chuyển đến trang cảm ơn
+          await refreshCart()
+          navigate('/thank-you')
+        }
       } else {
         const errorMsg = response.data?.data || response.data?.message || 'Có lỗi xảy ra khi đặt hàng'
         alert(errorMsg)
+        setLoading(false)
       }
     } catch (error) {
       console.error('Checkout error:', error)
       const errorMsg = error.response?.data?.data || error.response?.data?.message || error.message || 'Có lỗi xảy ra khi đặt hàng'
       alert(errorMsg)
-    } finally {
       setLoading(false)
     }
   }
@@ -104,13 +136,26 @@ const Checkout = () => {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary/90 transition disabled:opacity-50"
-          >
-            {loading ? 'Đang xử lý...' : 'Đặt hàng'}
-          </button>
+          {/* Nút thanh toán */}
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, 'cod')}
+              disabled={loading}
+              className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition disabled:opacity-50"
+            >
+              {loading ? 'Đang xử lý...' : 'Đặt hàng'}
+            </button>
+            
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, 'online')}
+              disabled={loading}
+              className="flex-1 bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary/90 transition disabled:opacity-50"
+            >
+              {loading ? 'Đang xử lý...' : 'Thanh toán online'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

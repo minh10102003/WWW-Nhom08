@@ -25,7 +25,7 @@ const ProductDetail = () => {
     previewY: 0
   })
   const [imageLoaded, setImageLoaded] = useState(false)
-  const { addToCart } = useCart()
+  const { addToCart, updateCart } = useCart()
   const { user } = useAuth()
 
   useEffect(() => {
@@ -111,6 +111,37 @@ const ProductDetail = () => {
       } else {
         alert(result.error || 'Có lỗi xảy ra')
       }
+    }
+  }
+
+  const handleBuyNow = async () => {
+    try {
+      // Thêm sản phẩm vào giỏ hàng trước
+      const addResult = await addToCart(id)
+      if (!addResult.success) {
+        // If not logged in and API requires login, redirect to login
+        if (addResult.error && addResult.error.includes('login')) {
+          navigate('/login')
+        } else {
+          alert(addResult.error || 'Có lỗi xảy ra khi thêm vào giỏ hàng')
+        }
+        return
+      }
+
+      // Nếu số lượng > 1, cập nhật số lượng
+      if (quantity > 1) {
+        const updateResult = await updateCart(id, quantity)
+        if (!updateResult.success) {
+          alert(updateResult.error || 'Có lỗi xảy ra khi cập nhật số lượng')
+          return
+        }
+      }
+
+      // Chuyển đến trang checkout
+      navigate('/checkout')
+    } catch (error) {
+      console.error('Buy now error:', error)
+      alert('Có lỗi xảy ra khi xử lý đơn hàng')
     }
   }
 
@@ -342,7 +373,7 @@ const ProductDetail = () => {
                   Thêm vào giỏ hàng
                 </button>
                 <button
-                  onClick={() => navigate('/checkout')}
+                  onClick={handleBuyNow}
                   disabled={product.donViKho === 0}
                   className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >

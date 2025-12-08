@@ -173,6 +173,7 @@ const ShipperOrders = () => {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Người nhận</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Địa chỉ</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tổng tiền</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Thanh toán</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Trạng thái</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ngày giao</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Thao tác</th>
@@ -195,6 +196,20 @@ const ShipperOrders = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-semibold text-gray-900">{formatPrice(order.tongGiaTri)}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="space-y-1">
+                      <div>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          order.daThanhToan ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {order.daThanhToan ? '✓ Đã thanh toán' : '✗ Chưa thanh toán'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {order.phuongThucThanhToan === 'online' ? 'Online (VNPay)' : 'COD'}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
@@ -273,6 +288,24 @@ const ShipperOrders = () => {
                 <p><strong className="text-gray-700">Người nhận:</strong> <span className="text-gray-900">{selectedOrder.hoTenNguoiNhan}</span></p>
                 <p><strong className="text-gray-700">Địa chỉ:</strong> <span className="text-gray-900">{selectedOrder.diaChiNhan}</span></p>
                 <p><strong className="text-gray-700">SĐT:</strong> <span className="text-gray-900">{selectedOrder.sdtNhanHang}</span></p>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <p className="mb-2"><strong className="text-gray-700">Trạng thái thanh toán:</strong></p>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                      selectedOrder.daThanhToan ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {selectedOrder.daThanhToan ? '✓ Đã thanh toán' : '✗ Chưa thanh toán'}
+                    </span>
+                    <span className="text-xs text-gray-600">
+                      ({selectedOrder.phuongThucThanhToan === 'online' ? 'Thanh toán online (VNPay)' : 'Thanh toán khi nhận hàng (COD)'})
+                    </span>
+                  </div>
+                  {!selectedOrder.daThanhToan && selectedOrder.phuongThucThanhToan === 'cod' && (
+                    <p className="text-xs text-orange-600 mt-1 font-medium">
+                      ⚠ Lưu ý: Đơn hàng COD - cần thu tiền khi giao hàng
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

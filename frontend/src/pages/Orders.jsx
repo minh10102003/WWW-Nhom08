@@ -140,6 +140,16 @@ const Orders = () => {
                     <p className="text-gray-600 text-sm">
                       Ngày đặt: {formatDate(order.ngayDatHang)}
                     </p>
+                    <div className="mt-2 flex items-center gap-3">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        order.daThanhToan ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {order.daThanhToan ? '✓ Đã thanh toán' : '✗ Chưa thanh toán'}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {order.phuongThucThanhToan === 'online' ? 'Thanh toán online (VNPay)' : 'Thanh toán khi nhận hàng (COD)'}
+                      </span>
+                    </div>
                   </div>
                   <div className="mt-2 md:mt-0">
                     <span

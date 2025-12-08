@@ -271,6 +271,10 @@ public class DonHangApi {
 				return ro;
 			}
 			
+			// Kiểm tra phương thức thanh toán
+			String paymentMethod = orderData.get("paymentMethod");
+			boolean isOnlinePayment = "online".equals(paymentMethod);
+			
 			// Tạo DonHang với đầy đủ thông tin
 			DonHang donHang = new DonHang();
 			donHang.setHoTenNguoiNhan(orderData.get("hoTen"));
@@ -278,7 +282,17 @@ public class DonHangApi {
 			donHang.setDiaChiNhan(orderData.get("diaChi"));
 			donHang.setGhiChu(orderData.get("ghiChu") != null ? orderData.get("ghiChu") : "");
 			donHang.setNgayDatHang(new Date());
-			donHang.setTrangThaiDonHang("Đang chờ giao");
+			// Lưu phương thức thanh toán
+			donHang.setPhuongThucThanhToan(paymentMethod != null ? paymentMethod : "cod");
+			// Nếu thanh toán online, đặt trạng thái "Chờ thanh toán" và chưa thanh toán
+			// Nếu COD, đặt trạng thái "Đang chờ giao" và đã thanh toán (vì COD thanh toán khi nhận hàng)
+			if (isOnlinePayment) {
+				donHang.setTrangThaiDonHang("Chờ thanh toán");
+				donHang.setDaThanhToan(false);
+			} else {
+				donHang.setTrangThaiDonHang("Đang chờ giao");
+				donHang.setDaThanhToan(false); // COD chưa thanh toán, sẽ thanh toán khi nhận hàng
+			}
 			donHang.setTongGiaTri(tongGiaTri);
 			
 			if(!isAnonymous) {
@@ -354,8 +368,11 @@ public class DonHangApi {
 			// Lưu ChiTietDonHang
 			chiTietDonHangService.save(listDetailDH);
 			
-			// Clean up cart
-			cleanUpAfterCheckOut(request, response);
+			// Chỉ xóa cart nếu thanh toán trực tiếp (không phải online)
+			// Nếu thanh toán online, sẽ xóa cart sau khi thanh toán thành công
+			if (!isOnlinePayment) {
+				cleanUpAfterCheckOut(request, response);
+			}
 			
 			ro.setStatus("success");
 			ro.setData(savedDonHang);

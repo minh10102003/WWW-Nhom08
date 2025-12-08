@@ -74,6 +74,7 @@ public class SecurityConfig {
 
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/api/**").permitAll()
+						.requestMatchers("/vnpay/**").permitAll() // Cho phép VNPay callback
 						.requestMatchers(
 								"/img/**", "/assets/**", "/static/**", "/css/**", "/js/**",
 								"/*.js", "/*.json", "/*.ico", "/*.png", "/*.jpg", "/*.svg",

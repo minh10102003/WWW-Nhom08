@@ -7,7 +7,7 @@ export default defineConfig({
   base: '/iphoneshop/',
 
   server: {
-    port: 3000,
+    port: 3002,
     // Cấu hình Proxy để fix lỗi 404 khi gọi API từ localhost:3000
     proxy: {
       '/iphoneshop': {
