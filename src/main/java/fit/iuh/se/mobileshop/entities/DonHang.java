@@ -43,6 +43,8 @@ public class DonHang {
 
 	private String trangThaiDonHang;
 	private String ghiChu;
+	private String phuongThucThanhToan; // "online" hoặc "cod"
+	private boolean daThanhToan; // true nếu đã thanh toán, false nếu chưa
 
 	@ManyToOne(optional = true)
 	@JoinColumn(name = "ma_nguoi_dat")
@@ -156,6 +158,22 @@ public class DonHang {
 
 	public void setHoTenNguoiNhan(String hoTenNguoiNhan) {
 		this.hoTenNguoiNhan = hoTenNguoiNhan;
+	}
+
+	public String getPhuongThucThanhToan() {
+		return phuongThucThanhToan;
+	}
+
+	public void setPhuongThucThanhToan(String phuongThucThanhToan) {
+		this.phuongThucThanhToan = phuongThucThanhToan;
+	}
+
+	public boolean isDaThanhToan() {
+		return daThanhToan;
+	}
+
+	public void setDaThanhToan(boolean daThanhToan) {
+		this.daThanhToan = daThanhToan;
 	}
 
 	public DonHang() {

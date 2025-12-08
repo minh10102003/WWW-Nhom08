@@ -161,6 +161,7 @@ const AdminOrders = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Người nhận</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tổng tiền</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thanh toán</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày đặt</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
@@ -173,6 +174,20 @@ const AdminOrders = () => {
                 <td className="px-6 py-4 text-sm text-gray-900">{order.hoTenNguoiNhan}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatPrice(order.tongGiaTri)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <div className="space-y-1">
+                    <div>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        order.daThanhToan ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {order.daThanhToan ? '✓ Đã thanh toán' : '✗ Chưa thanh toán'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {order.phuongThucThanhToan === 'online' ? 'Online (VNPay)' : 'COD'}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <span className={`px-2 py-1 rounded text-xs ${

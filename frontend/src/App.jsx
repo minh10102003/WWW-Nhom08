@@ -14,6 +14,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
+import VNPayReturn from './pages/VNPayReturn'
 import Account from './pages/Account'
 import Orders from './pages/Orders'
 import Contact from './pages/Contact'
@@ -54,6 +55,7 @@ function AppContent() {
           {/* Cart & Order Routes */}
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/vnpay/return" element={<VNPayReturn />} />
           <Route path="/thank-you" element={<ThankYou />} />
 
           {/* User Routes */}
