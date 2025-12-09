@@ -45,8 +45,15 @@ public class VNPayApi {
 			// Chuyển đổi số tiền (VNPay yêu cầu số tiền * 100)
 			long amountInVnd = amount * 100;
 			
-			// Tạo mã giao dịch tham chiếu (dùng orderId)
-			String vnp_TxnRef = String.format("%08d", orderId);
+			// Tạo ngày giờ
+			Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+			String vnp_CreateDate = formatter.format(cld.getTime());
+			
+			// Tạo mã giao dịch tham chiếu duy nhất: orderId_timestamp
+			// Format: {orderId}_{yyyyMMddHHmmss} - ví dụ: 94_20251209162846
+			// Điều này đảm bảo mỗi lần tạo link thanh toán đều có vnp_TxnRef khác nhau
+			String vnp_TxnRef = orderId + "_" + vnp_CreateDate;
 			String vnp_IpAddr = VNPayUtil.getIpAddress(request);
 			
 			Map<String, String> vnp_Params = new HashMap<>();
@@ -61,16 +68,11 @@ public class VNPayApi {
 			}
 			
 			vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-			vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang:" + vnp_TxnRef);
+			vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang:" + orderId);
 			vnp_Params.put("vnp_OrderType", orderType);
 			vnp_Params.put("vnp_Locale", language);
 			vnp_Params.put("vnp_ReturnUrl", vnPayConfig.getReturnUrl());
 			vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
-			
-			// Tạo ngày giờ
-			Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-			String vnp_CreateDate = formatter.format(cld.getTime());
 			vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
 			
 			// Thời gian hết hạn (15 phút)

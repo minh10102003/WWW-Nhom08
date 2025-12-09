@@ -6,6 +6,11 @@ export default defineConfig({
   // Đường dẫn gốc khi chạy production (Deploy vào trong Spring Boot)
   base: '/iphoneshop/',
 
+  define: {
+    // Fix cho sockjs-client: define global = window
+    global: 'window',
+  },
+
   server: {
     port: 3003,
     // Cấu hình Proxy để fix lỗi 404 khi gọi API từ localhost:3000
@@ -28,6 +33,14 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
+      },
+      // Proxy cho WebSocket endpoint (bao gồm /ws và /ws/info cho SockJS)
+      '/ws': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        rewrite: (path) => path, // Giữ nguyên path
       },
       // KHÔNG proxy /iphoneshop/login và /iphoneshop/register vì đây là frontend routes
       // Vite dev server sẽ serve các route này, không cần proxy về backend

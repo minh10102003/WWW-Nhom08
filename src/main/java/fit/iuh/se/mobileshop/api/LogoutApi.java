@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class LogoutApi {
 
 	@PostMapping("/logout")

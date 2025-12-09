@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { adminProductApi, adminOrderApi, adminUserApi } from '../services/api'
+import api from '../services/api'
 import AdminCategories from './admin/AdminCategories'
 import AdminBrands from './admin/AdminBrands'
 import AdminProducts from './admin/AdminProducts'
 import AdminOrders from './admin/AdminOrders'
 import AdminUsers from './admin/AdminUsers'
 import AdminContacts from './admin/AdminContacts'
+import AdminChat from './admin/AdminChat'
 import AdminStatistics from './admin/AdminStatistics'
 
 const Admin = () => {
@@ -16,6 +18,7 @@ const Admin = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [chatUnreadCount, setChatUnreadCount] = useState(0)
 
   useEffect(() => {
     if (!loading && user) {
@@ -24,12 +27,49 @@ const Admin = () => {
       if (!roles.includes('ROLE_ADMIN')) {
         // Nếu không phải admin, redirect về trang chủ
         navigate('/')
+      } else {
+        // Load unread count cho admin
+        loadChatUnreadCount()
+        // Reload every 10 seconds
+        const interval = setInterval(() => {
+          loadChatUnreadCount()
+        }, 10000)
+        return () => clearInterval(interval)
       }
     } else if (!loading && !user) {
       // Nếu chưa đăng nhập, redirect về trang login
       navigate('/login')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, navigate])
+
+  // Load chat unread count
+  const loadChatUnreadCount = async () => {
+    if (!user) {
+      setChatUnreadCount(0)
+      return
+    }
+    try {
+      const response = await api.get('/chat/unread-count')
+      if (response.data.status === 'success') {
+        setChatUnreadCount(response.data.data.unreadCount || 0)
+      }
+    } catch (error) {
+      console.error('Error loading chat unread count:', error)
+    }
+  }
+
+  // Listen for unread count updates from WebSocket
+  useEffect(() => {
+    const handleUnreadUpdate = () => {
+      loadChatUnreadCount()
+    }
+    
+    window.addEventListener('chatUnreadUpdate', handleUnreadUpdate)
+    return () => {
+      window.removeEventListener('chatUnreadUpdate', handleUnreadUpdate)
+    }
+  }, [user])
 
   // Early returns sau khi đã gọi tất cả hooks
   if (loading) {
@@ -59,6 +99,7 @@ const Admin = () => {
     { path: '/admin/don-hang', label: 'Đơn Hàng', icon: '📦' },
     { path: '/admin/tai-khoan', label: 'Tài Khoản', icon: '👥' },
     { path: '/admin/lien-he', label: 'Liên Hệ', icon: '✉️' },
+    { path: '/admin/chat', label: 'Chat', icon: '💬' },
     { path: '/admin/thong-ke', label: 'Thống Kê', icon: '📈' },
   ]
 
@@ -66,7 +107,8 @@ const Admin = () => {
     if (item.exact) {
       return location.pathname === item.path || location.pathname === item.path + '/'
     }
-    return location.pathname.includes(item.path)
+    // Fix: Use startsWith instead of includes to avoid matching /chat with /admin/chat
+    return location.pathname === item.path || location.pathname.startsWith(item.path + '/')
   }
 
   return (
@@ -157,6 +199,18 @@ const Admin = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <Link
+                  to="/admin/chat"
+                  className="relative p-2 text-gray-700 hover:text-primary transition-colors"
+                  title="Chat"
+                >
+                  <span className="text-2xl">💬</span>
+                  {chatUnreadCount > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                      {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+                    </span>
+                  )}
+                </Link>
+                <Link
                   to="/"
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors"
                 >
@@ -176,6 +230,7 @@ const Admin = () => {
               <Route path="/don-hang" element={<AdminOrders />} />
               <Route path="/tai-khoan" element={<AdminUsers />} />
               <Route path="/lien-he" element={<AdminContacts />} />
+              <Route path="/chat" element={<AdminChat />} />
               <Route path="/thong-ke" element={<AdminStatistics />} />
             </Routes>
           </main>

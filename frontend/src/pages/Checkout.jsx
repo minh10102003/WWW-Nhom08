@@ -37,6 +37,12 @@ const Checkout = () => {
 
   const handleSubmit = async (e, method) => {
     e.preventDefault()
+    
+    // Tránh bấm nhiều lần
+    if (loading) {
+      return
+    }
+    
     setLoading(true)
 
     try {
@@ -79,6 +85,7 @@ const Checkout = () => {
             
             if (vnpayResponse.data && vnpayResponse.data.code === '00') {
               // Chuyển hướng đến trang thanh toán VNPay
+              // Không set loading = false vì đang chuyển trang
               window.location.href = vnpayResponse.data.data
             } else {
               alert('Không thể tạo link thanh toán. Vui lòng thử lại.')

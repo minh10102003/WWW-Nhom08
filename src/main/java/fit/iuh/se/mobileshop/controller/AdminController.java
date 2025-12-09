@@ -28,7 +28,7 @@ import fit.iuh.se.mobileshop.service.VaiTroService;
 @Controller
 @RequestMapping("/admin")
 @SessionAttributes("loggedInUser")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class AdminController {
 
 	@Autowired

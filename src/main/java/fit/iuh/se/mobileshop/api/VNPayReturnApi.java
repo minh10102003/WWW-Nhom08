@@ -38,7 +38,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * API xử lý callback từ VNPay sau khi thanh toán
  */
 @RestController
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class VNPayReturnApi {
 	
 	@Autowired
@@ -315,33 +315,42 @@ public class VNPayReturnApi {
 			String vnp_ResponseCode = request.getParameter("vnp_ResponseCode");
 			String vnp_TransactionStatus = request.getParameter("vnp_TransactionStatus");
 			String vnp_TxnRef = request.getParameter("vnp_TxnRef");
-			orderId = vnp_TxnRef;
 			
 			System.out.println("ResponseCode: " + vnp_ResponseCode);
 			System.out.println("TransactionStatus: " + vnp_TransactionStatus);
 			System.out.println("TxnRef: " + vnp_TxnRef);
 			System.out.println("IsValidSignature: " + isValidSignature);
 			
+			// Parse orderId từ vnp_TxnRef
+			// Format: {orderId}_{timestamp} - ví dụ: 94_20251209162846
+			long orderIdLong = 0;
+			try {
+				if (vnp_TxnRef != null && vnp_TxnRef.contains("_")) {
+					// Format mới: orderId_timestamp
+					String[] parts = vnp_TxnRef.split("_", 2);
+					orderIdLong = Long.parseLong(parts[0]);
+					System.out.println("Parsed orderId from TxnRef: " + orderIdLong + " (from: " + vnp_TxnRef + ")");
+				} else {
+					// Format cũ: chỉ có orderId (backward compatibility)
+					orderIdLong = Long.parseLong(vnp_TxnRef);
+					System.out.println("Parsed orderId (old format): " + orderIdLong);
+				}
+				orderId = String.valueOf(orderIdLong);
+			} catch (NumberFormatException e) {
+				System.err.println("Cannot parse orderId from vnp_TxnRef: " + vnp_TxnRef);
+				message = "Mã giao dịch không hợp lệ!";
+				isValidSignature = false; // Đánh dấu không hợp lệ để không xử lý
+			}
+			
 			// Kiểm tra kết quả thanh toán
-			if (isValidSignature) {
+			if (isValidSignature && orderIdLong > 0) {
 				if ("00".equals(vnp_ResponseCode) && "00".equals(vnp_TransactionStatus)) {
 					// Thanh toán thành công
 					isSuccess = true;
 					message = "Thanh toán thành công!";
-					System.out.println("Payment successful for order: " + vnp_TxnRef);
+					System.out.println("Payment successful for order: " + orderIdLong);
 					
-					// Parse orderId từ vnp_TxnRef (có thể có leading zeros, cần trim)
 					try {
-						// vnp_TxnRef có thể là "00000098", cần parse và loại bỏ leading zeros
-						String orderIdStr = vnp_TxnRef.trim();
-						// Loại bỏ leading zeros
-						while (orderIdStr.startsWith("0") && orderIdStr.length() > 1) {
-							orderIdStr = orderIdStr.substring(1);
-						}
-						long orderIdLong = Long.parseLong(orderIdStr);
-						
-						System.out.println("Parsed Order ID: " + orderIdLong + " (from: " + vnp_TxnRef + ")");
-						
 						// Cập nhật trạng thái đơn hàng và đánh dấu đã thanh toán
 						DonHang donHang = donHangService.findById(orderIdLong);
 						if (donHang != null) {

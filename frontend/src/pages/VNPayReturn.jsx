@@ -49,10 +49,10 @@ const VNPayReturn = () => {
               console.warn('Error refreshing cart:', cartError)
             }
             
-            // Chuyển đến trang cảm ơn sau 2 giây
+            // Chuyển đến trang cảm ơn sau 5 giây
             setTimeout(() => {
               navigate('/thank-you')
-            }, 2000)
+            }, 5000)
           }
           return
         }

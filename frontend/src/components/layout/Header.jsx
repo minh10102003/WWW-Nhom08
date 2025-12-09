@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../context/CartContext'
-import { FiSearch, FiShoppingCart, FiUser, FiMenu, FiX } from 'react-icons/fi'
+import { useChat } from '../../context/ChatContext'
+import { FiSearch, FiShoppingCart, FiUser, FiMenu, FiX, FiMessageCircle } from 'react-icons/fi'
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -11,6 +12,7 @@ const Header = () => {
   const [userMenuTimeout, setUserMenuTimeout] = useState(null)
   const { user, logout } = useAuth()
   const { cartCount } = useCart()
+  const { unreadCount } = useChat()
   const navigate = useNavigate()
 
   const handleUserMenuEnter = () => {
@@ -115,6 +117,20 @@ const Header = () => {
                 </span>
               )}
             </Link>
+            {user && (
+              <Link
+                to="/chat"
+                className="relative p-2 text-gray-700 hover:text-primary transition"
+                title="Chat với chúng tôi"
+              >
+                <FiMessageCircle size={24} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
             {user ? (
               <div 
                 className="relative"
@@ -234,6 +250,15 @@ const Header = () => {
             >
               Liên hệ
             </Link>
+            {user && (
+              <Link
+                to="/chat"
+                className="block py-2 text-gray-700 hover:text-primary"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                💬 Chat
+              </Link>
+            )}
           </div>
         </div>
       )}
