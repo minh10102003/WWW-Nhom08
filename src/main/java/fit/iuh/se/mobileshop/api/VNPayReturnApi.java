@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fit.iuh.se.mobileshop.config.VNPayConfig;
 import fit.iuh.se.mobileshop.entities.ChiMucGioHang;
+import fit.iuh.se.mobileshop.entities.ChiTietDonHang;
 import fit.iuh.se.mobileshop.entities.DonHang;
 import fit.iuh.se.mobileshop.entities.GioHang;
 import fit.iuh.se.mobileshop.entities.NguoiDung;
+import fit.iuh.se.mobileshop.entities.SanPham;
 import fit.iuh.se.mobileshop.service.ChiMucGioHangService;
 import fit.iuh.se.mobileshop.service.DonHangService;
 import fit.iuh.se.mobileshop.service.GioHangService;
@@ -48,6 +50,78 @@ public class VNPayReturnApi {
 	
 	private NguoiDung getSessionUser(HttpServletRequest request) {
 		return (NguoiDung) request.getSession().getAttribute("loggedInUser");
+	}
+	
+	/**
+	 * Xóa các sản phẩm trong đơn hàng khỏi cart (không xóa toàn bộ cart)
+	 * Giống logic khi đặt hàng COD từ cart
+	 */
+	private void cleanUpCartItemsFromOrder(DonHang donHang, HttpServletRequest request, HttpServletResponse response) {
+		try {
+			if (donHang == null || donHang.getDanhSachChiTiet() == null || donHang.getDanhSachChiTiet().isEmpty()) {
+				System.out.println("Order has no items, skipping cart cleanup");
+				return;
+			}
+			
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			boolean isAnonymous = (auth == null || 
+				auth.getPrincipal() == null || 
+				"anonymousUser".equals(auth.getPrincipal().toString()) ||
+				!auth.isAuthenticated());
+			
+			if(isAnonymous) {
+				// Xóa cookies cho các sản phẩm trong đơn hàng
+				Cookie clientCookies[] = request.getCookies();
+				if(clientCookies != null) {
+					for(ChiTietDonHang chiTiet : donHang.getDanhSachChiTiet()) {
+						if(chiTiet != null && chiTiet.getSanPham() != null) {
+							String productId = String.valueOf(chiTiet.getSanPham().getId());
+							for(int i = 0; i < clientCookies.length; i++) {
+								if(clientCookies[i] != null && clientCookies[i].getName().equals(productId)) {
+									clientCookies[i].setMaxAge(0);
+									clientCookies[i].setPath("/iphoneshop");
+									response.addCookie(clientCookies[i]);
+									System.out.println("Removed product " + productId + " from cart (cookie)");
+									break;
+								}
+							}
+						}
+					}
+				}
+			} else {
+				// Xóa từ database - chỉ xóa các sản phẩm trong đơn hàng
+				NguoiDung currentUser = getSessionUser(request);
+				if(currentUser == null) {
+					String email = auth.getName();
+					if(email != null && !email.equals("anonymousUser")) {
+						currentUser = nguoiDungService.findByEmail(email);
+						if(currentUser != null) {
+							request.getSession().setAttribute("loggedInUser", currentUser);
+						}
+					}
+				}
+				
+				if(currentUser != null) {
+					GioHang g = gioHangService.getGioHangByNguoiDung(currentUser);
+					if(g != null) {
+						// Xóa từng sản phẩm trong đơn hàng khỏi cart
+						for(ChiTietDonHang chiTiet : donHang.getDanhSachChiTiet()) {
+							if(chiTiet != null && chiTiet.getSanPham() != null) {
+								SanPham sp = chiTiet.getSanPham();
+								ChiMucGioHang c = chiMucGioHangService.getChiMucGioHangBySanPhamAndGioHang(sp, g);
+								if(c != null) {
+									chiMucGioHangService.deleteChiMucGiohang(c);
+									System.out.println("Removed product " + sp.getId() + " from cart (database)");
+								}
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("Error cleaning up cart items from order: " + e.getMessage());
+			e.printStackTrace();
+		}
 	}
 	
 	private void cleanUpAfterCheckOut(HttpServletRequest request, HttpServletResponse response) {
@@ -169,13 +243,30 @@ public class VNPayReturnApi {
 						// Cập nhật trạng thái đơn hàng và đánh dấu đã thanh toán
 						DonHang donHang = donHangService.findById(orderIdLong);
 						if (donHang != null) {
+							// Kiểm tra ChiTietDonHang trước khi cập nhật
+							if (donHang.getDanhSachChiTiet() != null) {
+								System.out.println("Order #" + orderIdLong + " has " + donHang.getDanhSachChiTiet().size() + " ChiTietDonHang before update");
+							} else {
+								System.err.println("WARNING: Order #" + orderIdLong + " has NULL danhSachChiTiet before update!");
+							}
+							
 							donHang.setTrangThaiDonHang("Đang chờ giao");
 							donHang.setDaThanhToan(true); // Đánh dấu đã thanh toán
 							donHangService.save(donHang);
+							
+							// Reload để kiểm tra ChiTietDonHang sau khi cập nhật
+							donHang = donHangService.findById(orderIdLong);
+							if (donHang.getDanhSachChiTiet() != null) {
+								System.out.println("Order #" + orderIdLong + " has " + donHang.getDanhSachChiTiet().size() + " ChiTietDonHang after update");
+							} else {
+								System.err.println("ERROR: Order #" + orderIdLong + " has NULL danhSachChiTiet after update!");
+							}
+							
 							System.out.println("Order status updated to: Đang chờ giao, Payment status: Đã thanh toán");
 							
-							// Xóa cart sau khi thanh toán thành công
-							cleanUpAfterCheckOut(request, response);
+							// Chỉ xóa các sản phẩm trong đơn hàng khỏi cart (không xóa toàn bộ cart)
+							// Giống logic khi đặt hàng COD từ cart
+							cleanUpCartItemsFromOrder(donHang, request, response);
 						} else {
 							System.err.println("Order not found: " + orderIdLong);
 							message = "Thanh toán thành công nhưng không tìm thấy đơn hàng!";

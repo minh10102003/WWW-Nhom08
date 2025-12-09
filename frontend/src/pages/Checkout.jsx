@@ -22,6 +22,9 @@ const Checkout = () => {
     if (buyNowProduct) {
       // Có sản phẩm "mua ngay", giữ lại để dùng khi tạo đơn hàng
       console.log('Checkout với sản phẩm "mua ngay"')
+    } else {
+      // Không có buyNowProduct, nghĩa là checkout từ cart
+      console.log('Checkout từ giỏ hàng')
     }
   }, [])
 

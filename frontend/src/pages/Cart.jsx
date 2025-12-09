@@ -147,7 +147,11 @@ const Cart = () => {
                 </div>
               </div>
               <button
-                onClick={() => navigate('/checkout')}
+                onClick={() => {
+                  // Xóa buyNowProduct nếu có (để đảm bảo lấy từ cart)
+                  localStorage.removeItem('buyNowProduct')
+                  navigate('/checkout')
+                }}
                 className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
               >
                 Thanh toán

@@ -416,7 +416,16 @@ public class DonHangApi {
 			}
 			
 			// Lưu ChiTietDonHang
-			chiTietDonHangService.save(listDetailDH);
+			List<ChiTietDonHang> savedDetails = chiTietDonHangService.save(listDetailDH);
+			System.out.println("=== Saved " + savedDetails.size() + " ChiTietDonHang for order #" + savedDonHang.getId() + " ===");
+			
+			// Reload đơn hàng để đảm bảo có ChiTietDonHang
+			savedDonHang = donHangService.findById(savedDonHang.getId());
+			if (savedDonHang.getDanhSachChiTiet() != null) {
+				System.out.println("=== Order #" + savedDonHang.getId() + " has " + savedDonHang.getDanhSachChiTiet().size() + " ChiTietDonHang ===");
+			} else {
+				System.err.println("=== WARNING: Order #" + savedDonHang.getId() + " has NULL danhSachChiTiet ===");
+			}
 			
 			// Chỉ xóa cart nếu:
 			// 1. Không phải "mua ngay" (vì "mua ngay" không ảnh hưởng đến cart)

@@ -69,7 +69,8 @@ public class DonHangServiceImpl implements DonHangService {
 
 	@Override
 	public DonHang findById(long id) {
-		return donHangRepo.findById(id).get();
+		// Sử dụng findById với EntityGraph để load ChiTietDonHang
+		return donHangRepo.findById(id).orElse(null);
 	}
 
 	@Override
