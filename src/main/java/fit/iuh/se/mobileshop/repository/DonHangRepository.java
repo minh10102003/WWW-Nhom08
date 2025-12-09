@@ -1,7 +1,9 @@
 package fit.iuh.se.mobileshop.repository;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
@@ -10,6 +12,9 @@ import fit.iuh.se.mobileshop.entities.DonHang;
 import fit.iuh.se.mobileshop.entities.NguoiDung;
 
 public interface DonHangRepository extends JpaRepository<DonHang, Long>, QuerydslPredicateExecutor<DonHang> {
+
+	@EntityGraph(attributePaths = {"danhSachChiTiet", "danhSachChiTiet.sanPham"})
+	Optional<DonHang> findById(Long id);
 
 	public List<DonHang> findByTrangThaiDonHangAndShipper(String trangThai, NguoiDung shipper);
 
