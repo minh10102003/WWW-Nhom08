@@ -174,13 +174,43 @@ public class DonHangApi {
 				"anonymousUser".equals(auth.getPrincipal().toString()) ||
 				!auth.isAuthenticated());
 
+			// Kiểm tra nếu có sản phẩm "mua ngay" (buyNow)
+			String buyNowProductId = orderData.get("buyNowProductId");
+			String buyNowQuantity = orderData.get("buyNowQuantity");
+			boolean isBuyNow = buyNowProductId != null && !buyNowProductId.isEmpty();
+			
 			// Lấy cart items trước để tính tổng giá trị
 			Map<Long, String> quanity = new HashMap<>();
 			List<SanPham> listsp = new ArrayList<>();
 			List<ChiTietDonHang> listDetailDH = new ArrayList<>();
 			long tongGiaTri = 0;
 
-			if(isAnonymous) {
+			// Nếu là "mua ngay", chỉ lấy sản phẩm đó
+			if (isBuyNow) {
+				try {
+					Long productId = Long.parseLong(buyNowProductId);
+					int quantity = buyNowQuantity != null ? Integer.parseInt(buyNowQuantity) : 1;
+					
+					SanPham sp = sanPhamService.getSanPhamById(productId);
+					if (sp != null) {
+						listsp.add(sp);
+						quanity.put(productId, String.valueOf(quantity));
+						tongGiaTri = quantity * sp.getDonGia();
+					} else {
+						ro.setStatus("false");
+						ro.setData("Sản phẩm không tồn tại");
+						return ro;
+					}
+				} catch (NumberFormatException e) {
+					ro.setStatus("false");
+					ro.setData("Thông tin sản phẩm không hợp lệ");
+					return ro;
+				} catch (Exception e) {
+					ro.setStatus("false");
+					ro.setData("Lỗi khi lấy thông tin sản phẩm: " + e.getMessage());
+					return ro;
+				}
+			} else if(isAnonymous) {
 				// Lấy từ cookie
 				Cookie cl[] = request.getCookies();
 				Set<Long> idList = new HashSet<>();
@@ -312,7 +342,27 @@ public class DonHangApi {
 			DonHang savedDonHang = donHangService.save(donHang);
 			
 			// Tạo ChiTietDonHang
-			if(isAnonymous) {
+			// Nếu là "mua ngay", chỉ tạo với sản phẩm đó
+			if (isBuyNow) {
+				for(SanPham sp : listsp) {
+					if(sp != null) {
+						String qtyStr = quanity.get(sp.getId());
+						if(qtyStr != null) {
+							try {
+								int soLuong = Integer.parseInt(qtyStr);
+								ChiTietDonHang detailDH = new ChiTietDonHang();
+								detailDH.setSanPham(sp);
+								detailDH.setSoLuongDat(soLuong);
+								detailDH.setDonGia(soLuong * sp.getDonGia());
+								detailDH.setDonHang(savedDonHang);
+								listDetailDH.add(detailDH);
+							} catch (NumberFormatException e) {
+								// Skip invalid quantity
+							}
+						}
+					}
+				}
+			} else if(isAnonymous) {
 				for(SanPham sp : listsp) {
 					if(sp != null) {
 						String qtyStr = quanity.get(sp.getId());
@@ -368,9 +418,11 @@ public class DonHangApi {
 			// Lưu ChiTietDonHang
 			chiTietDonHangService.save(listDetailDH);
 			
-			// Chỉ xóa cart nếu thanh toán trực tiếp (không phải online)
+			// Chỉ xóa cart nếu:
+			// 1. Không phải "mua ngay" (vì "mua ngay" không ảnh hưởng đến cart)
+			// 2. Thanh toán trực tiếp (không phải online)
 			// Nếu thanh toán online, sẽ xóa cart sau khi thanh toán thành công
-			if (!isOnlinePayment) {
+			if (!isBuyNow && !isOnlinePayment) {
 				cleanUpAfterCheckOut(request, response);
 			}
 			
