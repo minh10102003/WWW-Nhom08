@@ -156,7 +156,7 @@ const Privacy = () => {
             Nếu bạn có câu hỏi hoặc yêu cầu về chính sách bảo mật, vui lòng liên hệ:
           </p>
           <p className="text-xl font-bold">
-            Email: privacy@anhhaoiphone.com | Hotline: 1900.5301
+            Email: privacy@iuhmobile.com | Hotline: 1900.5301
           </p>
           <p className="mt-4 text-sm opacity-75">
             Chính sách này có thể được cập nhật định kỳ. Vui lòng kiểm tra lại thường xuyên.

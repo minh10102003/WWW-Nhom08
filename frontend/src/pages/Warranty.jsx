@@ -154,7 +154,7 @@ const Warranty = () => {
             Mọi thắc mắc về bảo hành, vui lòng liên hệ:
           </p>
           <p className="text-xl font-bold text-primary">
-            Hotline: 1900.5325 | Email: baohanh@anhhaoiphone.com
+            Hotline: 1900.5325 | Email: baohanh@iuhmobile.com
           </p>
         </section>
       </div>

@@ -152,7 +152,7 @@ const Careers = () => {
         <section className="mt-8 bg-gradient-primary text-white rounded-2xl shadow-lg p-8 text-center">
           <h2 className="text-2xl font-bold mb-4">Gửi hồ sơ ứng tuyển</h2>
           <p className="mb-6 opacity-90">
-            Gửi CV và thư xin việc đến email: <strong>tuyendung@anhhaoiphone.com</strong>
+            Gửi CV và thư xin việc đến email: <strong>tuyendung@iuhmobile.com</strong>
           </p>
           <p className="text-sm opacity-75">
             Hotline: <strong>1900.5301</strong> (Phòng Nhân sự)

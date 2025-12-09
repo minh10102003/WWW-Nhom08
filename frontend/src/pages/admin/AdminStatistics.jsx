@@ -25,7 +25,6 @@ const AdminStatistics = () => {
     totalRevenue: 0,
     totalOrders: 0,
     averageOrderValue: 0,
-    conversionRate: 0,
   })
 
   useEffect(() => {
@@ -275,31 +274,10 @@ const AdminStatistics = () => {
       // Calculate average order value
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
       
-      // Get total users
-      const roles = ['ROLE_MEMBER', 'ROLE_ADMIN', 'ROLE_SHIPPER']
-      const allUserIds = new Set()
-      for (const role of roles) {
-        try {
-          const response = await adminUserApi.getAll(role, 1)
-          if (response.data?.content) {
-            response.data.content.forEach(user => {
-              if (user.id) allUserIds.add(user.id)
-            })
-          }
-        } catch (error) {
-          // Ignore
-        }
-      }
-      const totalUsers = allUserIds.size
-      
-      // Conversion rate (orders / users) - approximate
-      const conversionRate = totalUsers > 0 ? (totalOrders / totalUsers) * 100 : 0
-      
       setSummary({
         totalRevenue,
         totalOrders,
         averageOrderValue,
-        conversionRate,
       })
     } catch (error) {
       console.error('Error loading summary:', error)
@@ -371,7 +349,7 @@ const AdminStatistics = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
@@ -410,20 +388,6 @@ const AdminStatistics = () => {
             </div>
             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
               <span className="text-2xl">📊</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 uppercase tracking-wide">Tỷ Lệ Chuyển Đổi</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                {summary.conversionRate.toFixed(1)}%
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">📈</span>
             </div>
           </div>
         </div>

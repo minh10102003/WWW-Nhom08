@@ -197,7 +197,7 @@ const PaymentGuide = () => {
             Nếu bạn gặp vấn đề trong quá trình thanh toán, vui lòng liên hệ ngay với chúng tôi
           </p>
           <p className="text-xl font-bold">
-            Hotline: 1900.5301 | Email: thanhtoan@anhhaoiphone.com
+            Hotline: 1900.5301 | Email: thanhtoan@iuhmobile.com
           </p>
         </section>
       </div>
