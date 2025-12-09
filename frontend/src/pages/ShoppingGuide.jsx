@@ -185,7 +185,7 @@ const ShoppingGuide = () => {
             Nếu bạn gặp khó khăn trong quá trình mua hàng, đừng ngần ngại liên hệ với chúng tôi
           </p>
           <p className="text-xl font-bold">
-            Hotline: 1900.5301 | Email: cskh@anhhaoiphone.com
+            Hotline: 1900.5301 | Email: cskh@iuhmobile.com
           </p>
           <p className="mt-4 text-sm opacity-75">
             Thời gian hỗ trợ: 8:00 - 22:00 (Hàng ngày)

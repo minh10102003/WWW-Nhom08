@@ -75,7 +75,16 @@ export const brandApi = {
 }
 
 export const cartApi = {
-  addToCart: (id) => api.get('/gio-hang/addSanPham', { params: { id } }),
+  addToCart: (id, quantity = 1) => {
+    // Ensure quantity is always sent as string, even if it's 1
+    const qty = quantity != null && quantity !== undefined ? String(quantity) : '1'
+    const productId = String(id)
+    console.log('addToCart API call - id:', productId, 'quantity:', qty, 'type:', typeof qty)
+    // Build URL manually to ensure quantity is always included
+    const url = `/gio-hang/addSanPham?id=${encodeURIComponent(productId)}&quantity=${encodeURIComponent(qty)}`
+    console.log('Request URL:', url)
+    return api.get(url)
+  },
   getItems: () => api.get('/gio-hang/items'),
   updateQuantity: (id, value) => {
     return api.get('/gio-hang/changSanPhamQuanity', {

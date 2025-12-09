@@ -19,7 +19,7 @@ import fit.iuh.se.mobileshop.entities.SanPham;
 import fit.iuh.se.mobileshop.service.SanPhamService;
 
 @Controller
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class ClientSearchController {
 	
 	@Autowired

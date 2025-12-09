@@ -168,7 +168,7 @@ const Shipping = () => {
             Mọi thắc mắc về giao hàng, vui lòng liên hệ:
           </p>
           <p className="text-xl font-bold text-primary">
-            Hotline: 1900.5301 | Email: giaohang@anhhaoiphone.com
+            Hotline: 1900.5301 | Email: giaohang@iuhmobile.com
           </p>
         </section>
       </div>

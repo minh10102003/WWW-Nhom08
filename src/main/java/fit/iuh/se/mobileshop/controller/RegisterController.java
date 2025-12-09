@@ -17,7 +17,7 @@ import fit.iuh.se.mobileshop.service.SecurityService;
 import fit.iuh.se.mobileshop.validator.NguoiDungValidator;
 
 @Controller
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class RegisterController {
 
     @Autowired

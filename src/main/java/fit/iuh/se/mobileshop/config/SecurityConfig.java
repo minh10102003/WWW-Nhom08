@@ -75,6 +75,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/api/**").permitAll()
 						.requestMatchers("/vnpay/**").permitAll() // Cho phép VNPay callback
+						.requestMatchers("/ws/**").permitAll() // Cho phép WebSocket endpoint
 						.requestMatchers(
 								"/img/**", "/assets/**", "/static/**", "/css/**", "/js/**",
 								"/*.js", "/*.json", "/*.ico", "/*.png", "/*.jpg", "/*.svg",
@@ -83,7 +84,7 @@ public class SecurityConfig {
 						.requestMatchers("/index.html").permitAll()
 						.requestMatchers("/register", "/register/**").permitAll()
 						// Lưu ý: Đảm bảo các đường dẫn này khớp với controller
-						.requestMatchers("/", "/store", "/product/**", "/search", "/contact",
+						.requestMatchers("/", "/store", "/product/**", "/search", "/contact", "/chat",
 								"/gio-hang/**", "/cart", "/checkout", "/account/**", "/thank-you").permitAll()
 						.requestMatchers("/login", "/login/**").permitAll()
 						.requestMatchers("/admin/**").hasRole("ADMIN")

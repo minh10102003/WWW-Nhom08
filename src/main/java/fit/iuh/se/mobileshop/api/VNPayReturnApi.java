@@ -8,8 +8,12 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.view.RedirectView;
 
 import fit.iuh.se.mobileshop.config.VNPayConfig;
 import fit.iuh.se.mobileshop.entities.ChiMucGioHang;
@@ -34,6 +38,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * API xử lý callback từ VNPay sau khi thanh toán
  */
 @RestController
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class VNPayReturnApi {
 	
 	@Autowired
@@ -175,18 +180,107 @@ public class VNPayReturnApi {
 	/**
 	 * Xử lý callback từ VNPay sau khi thanh toán
 	 * Endpoint này được gọi trực tiếp từ VNPay redirect
-	 * Trả về HTML với thông báo kết quả thanh toán
+	 * Redirect đến frontend page với các params
 	 */
-	@GetMapping(value = "/vnpay/return", produces = MediaType.TEXT_HTML_VALUE)
-	public String vnpayReturn(HttpServletRequest request, HttpServletResponse response) {
-		String html = "";
+	@GetMapping(value = "/vnpay/return")
+	public RedirectView vnpayReturn(HttpServletRequest request, HttpServletResponse response) {
+		System.out.println("=== VNPay Return Callback (Backend) ===");
+		System.out.println("Request URL: " + request.getRequestURL());
+		System.out.println("Query String: " + request.getQueryString());
+		System.out.println("Request Method: " + request.getMethod());
+		
+		// Xử lý callback
+		PaymentResult paymentResult = processVNPayCallback(request, response);
+		
+		System.out.println("Payment Result - Success: " + paymentResult.isSuccess);
+		System.out.println("Payment Result - Message: " + paymentResult.message);
+		System.out.println("Payment Result - OrderId: " + paymentResult.orderId);
+		
+		// Build redirect URL đến frontend với kết quả
+		// Sử dụng absolute URL để đảm bảo redirect đúng
+		StringBuilder redirectUrl = new StringBuilder("http://localhost:3003/iphoneshop/vnpay/return?");
+		try {
+			redirectUrl.append("status=").append(java.net.URLEncoder.encode(paymentResult.isSuccess ? "success" : "failed", "UTF-8"));
+			redirectUrl.append("&message=").append(java.net.URLEncoder.encode(paymentResult.message, "UTF-8"));
+			if (paymentResult.orderId != null && !paymentResult.orderId.isEmpty()) {
+				redirectUrl.append("&orderId=").append(java.net.URLEncoder.encode(paymentResult.orderId, "UTF-8"));
+			}
+		} catch (Exception e) {
+			System.err.println("Error building redirect URL: " + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		System.out.println("Redirecting to: " + redirectUrl.toString());
+		RedirectView redirectView = new RedirectView(redirectUrl.toString());
+		redirectView.setHttp10Compatible(false); // Sử dụng HTTP 1.1
+		return redirectView;
+	}
+	
+	/**
+	 * API endpoint trả về JSON cho frontend
+	 * Frontend sẽ gọi endpoint này để lấy kết quả thanh toán
+	 */
+	@GetMapping(value = "/api/vnpay/return", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Map<String, Object>> vnpayReturnApi(
+			@RequestParam Map<String, String> allParams,
+			HttpServletRequest request,
+			HttpServletResponse response) {
+		
+		Map<String, Object> result = new HashMap<>();
+		
+		try {
+			System.out.println("=== VNPay Return API Callback ===");
+			System.out.println("Request URL: " + request.getRequestURL());
+			System.out.println("Query String: " + request.getQueryString());
+			System.out.println("All Params: " + allParams);
+			
+			// Xử lý callback
+			PaymentResult paymentResult = processVNPayCallback(request, response);
+			
+			System.out.println("Payment Result - Success: " + paymentResult.isSuccess);
+			System.out.println("Payment Result - Message: " + paymentResult.message);
+			System.out.println("Payment Result - OrderId: " + paymentResult.orderId);
+			
+			result.put("status", paymentResult.isSuccess ? "success" : "failed");
+			result.put("message", paymentResult.message);
+			result.put("orderId", paymentResult.orderId);
+			
+			System.out.println("Returning result: " + result);
+			return ResponseEntity.ok(result);
+			
+		} catch (Exception e) {
+			System.err.println("Error in VNPay Return API: " + e.getMessage());
+			e.printStackTrace();
+			result.put("status", "error");
+			result.put("message", "Có lỗi xảy ra khi xử lý thanh toán: " + e.getMessage());
+			return ResponseEntity.ok(result);
+		}
+	}
+	
+	/**
+	 * Class để lưu kết quả xử lý thanh toán
+	 */
+	private static class PaymentResult {
+		boolean isSuccess;
+		String message;
+		String orderId;
+		
+		PaymentResult(boolean isSuccess, String message, String orderId) {
+			this.isSuccess = isSuccess;
+			this.message = message;
+			this.orderId = orderId;
+		}
+	}
+	
+	/**
+	 * Xử lý logic callback từ VNPay
+	 */
+	private PaymentResult processVNPayCallback(HttpServletRequest request, HttpServletResponse response) {
 		boolean isSuccess = false;
 		String message = "";
 		String orderId = "";
 		
 		try {
-			System.out.println("=== VNPay Return Callback ===");
-			
 			// Lấy tất cả các tham số từ VNPay và encode để hash (giống code mẫu)
 			Map<String, String> fields = new HashMap<>();
 			Enumeration<String> params = request.getParameterNames();
@@ -221,28 +315,49 @@ public class VNPayReturnApi {
 			String vnp_ResponseCode = request.getParameter("vnp_ResponseCode");
 			String vnp_TransactionStatus = request.getParameter("vnp_TransactionStatus");
 			String vnp_TxnRef = request.getParameter("vnp_TxnRef");
-			orderId = vnp_TxnRef;
 			
 			System.out.println("ResponseCode: " + vnp_ResponseCode);
 			System.out.println("TransactionStatus: " + vnp_TransactionStatus);
 			System.out.println("TxnRef: " + vnp_TxnRef);
 			System.out.println("IsValidSignature: " + isValidSignature);
 			
+			// Parse orderId từ vnp_TxnRef
+			// Format: {orderId}_{timestamp} - ví dụ: 94_20251209162846
+			long orderIdLong = 0;
+			try {
+				if (vnp_TxnRef != null && vnp_TxnRef.contains("_")) {
+					// Format mới: orderId_timestamp
+					String[] parts = vnp_TxnRef.split("_", 2);
+					orderIdLong = Long.parseLong(parts[0]);
+					System.out.println("Parsed orderId from TxnRef: " + orderIdLong + " (from: " + vnp_TxnRef + ")");
+				} else {
+					// Format cũ: chỉ có orderId (backward compatibility)
+					orderIdLong = Long.parseLong(vnp_TxnRef);
+					System.out.println("Parsed orderId (old format): " + orderIdLong);
+				}
+				orderId = String.valueOf(orderIdLong);
+			} catch (NumberFormatException e) {
+				System.err.println("Cannot parse orderId from vnp_TxnRef: " + vnp_TxnRef);
+				message = "Mã giao dịch không hợp lệ!";
+				isValidSignature = false; // Đánh dấu không hợp lệ để không xử lý
+			}
+			
 			// Kiểm tra kết quả thanh toán
-			if (isValidSignature) {
+			if (isValidSignature && orderIdLong > 0) {
 				if ("00".equals(vnp_ResponseCode) && "00".equals(vnp_TransactionStatus)) {
 					// Thanh toán thành công
 					isSuccess = true;
 					message = "Thanh toán thành công!";
-					System.out.println("Payment successful for order: " + vnp_TxnRef);
+					System.out.println("Payment successful for order: " + orderIdLong);
 					
-					// Parse orderId từ vnp_TxnRef
 					try {
-						long orderIdLong = Long.parseLong(vnp_TxnRef);
-						
 						// Cập nhật trạng thái đơn hàng và đánh dấu đã thanh toán
 						DonHang donHang = donHangService.findById(orderIdLong);
 						if (donHang != null) {
+							System.out.println("Found order: " + orderIdLong);
+							System.out.println("Current status: " + donHang.getTrangThaiDonHang());
+							System.out.println("Current payment status: " + donHang.isDaThanhToan());
+							
 							// Kiểm tra ChiTietDonHang trước khi cập nhật
 							if (donHang.getDanhSachChiTiet() != null) {
 								System.out.println("Order #" + orderIdLong + " has " + donHang.getDanhSachChiTiet().size() + " ChiTietDonHang before update");
@@ -252,119 +367,72 @@ public class VNPayReturnApi {
 							
 							donHang.setTrangThaiDonHang("Đang chờ giao");
 							donHang.setDaThanhToan(true); // Đánh dấu đã thanh toán
+							
+							System.out.println("Updating order status to: Đang chờ giao, Payment status: true");
 							donHangService.save(donHang);
+							System.out.println("Order saved successfully");
 							
 							// Reload để kiểm tra ChiTietDonHang sau khi cập nhật
 							donHang = donHangService.findById(orderIdLong);
-							if (donHang.getDanhSachChiTiet() != null) {
-								System.out.println("Order #" + orderIdLong + " has " + donHang.getDanhSachChiTiet().size() + " ChiTietDonHang after update");
-							} else {
-								System.err.println("ERROR: Order #" + orderIdLong + " has NULL danhSachChiTiet after update!");
+							if (donHang != null) {
+								System.out.println("Reloaded order - Status: " + donHang.getTrangThaiDonHang());
+								System.out.println("Reloaded order - Payment: " + donHang.isDaThanhToan());
+								if (donHang.getDanhSachChiTiet() != null) {
+									System.out.println("Order #" + orderIdLong + " has " + donHang.getDanhSachChiTiet().size() + " ChiTietDonHang after update");
+								} else {
+									System.err.println("ERROR: Order #" + orderIdLong + " has NULL danhSachChiTiet after update!");
+								}
 							}
 							
-							System.out.println("Order status updated to: Đang chờ giao, Payment status: Đã thanh toán");
+							System.out.println("Order status updated successfully!");
 							
 							// Chỉ xóa các sản phẩm trong đơn hàng khỏi cart (không xóa toàn bộ cart)
 							// Giống logic khi đặt hàng COD từ cart
-							cleanUpCartItemsFromOrder(donHang, request, response);
+							try {
+								cleanUpCartItemsFromOrder(donHang, request, response);
+							} catch (Exception e) {
+								System.err.println("Error cleaning up cart: " + e.getMessage());
+								e.printStackTrace();
+								// Không fail toàn bộ nếu chỉ lỗi cleanup cart
+							}
 						} else {
 							System.err.println("Order not found: " + orderIdLong);
-							message = "Thanh toán thành công nhưng không tìm thấy đơn hàng!";
+							message = "Thanh toán thành công nhưng không tìm thấy đơn hàng #" + orderIdLong;
+							isSuccess = false; // Đánh dấu là lỗi vì không tìm thấy đơn hàng
 						}
 					} catch (NumberFormatException e) {
 						System.err.println("Cannot parse orderId from: " + vnp_TxnRef);
-						message = "Thanh toán thành công nhưng có lỗi xử lý đơn hàng!";
+						e.printStackTrace();
+						message = "Thanh toán thành công nhưng có lỗi xử lý đơn hàng: " + e.getMessage();
+						isSuccess = false;
+					} catch (Exception e) {
+						System.err.println("Error updating order: " + e.getMessage());
+						e.printStackTrace();
+						message = "Thanh toán thành công nhưng có lỗi cập nhật đơn hàng: " + e.getMessage();
+						isSuccess = false;
 					}
 				} else {
 					// Thanh toán thất bại
 					isSuccess = false;
-					message = "Thanh toán không thành công. Mã lỗi: " + vnp_ResponseCode;
-					System.out.println("Payment failed. ResponseCode: " + vnp_ResponseCode);
+					message = "Thanh toán không thành công. Mã lỗi: " + vnp_ResponseCode + ", Trạng thái: " + vnp_TransactionStatus;
+					System.out.println("Payment failed. ResponseCode: " + vnp_ResponseCode + ", TransactionStatus: " + vnp_TransactionStatus);
 				}
 			} else {
 				// Chữ ký không hợp lệ
 				isSuccess = false;
 				message = "Chữ ký không hợp lệ. Giao dịch có thể không an toàn.";
-				System.err.println("Invalid signature!");
+				System.err.println("Invalid signature! Calculated: " + signValue + ", Received: " + vnp_SecureHash);
 			}
 			
 		} catch (Exception e) {
-			System.err.println("Error in VNPay Return: " + e.getMessage());
+			System.err.println("Error in processVNPayCallback: " + e.getMessage());
 			e.printStackTrace();
 			isSuccess = false;
 			message = "Có lỗi xảy ra khi xử lý thanh toán: " + e.getMessage();
 		}
 		
-		// Tạo HTML response
-		if (isSuccess) {
-			html = "<!DOCTYPE html>" +
-				"<html lang='vi'>" +
-				"<head>" +
-				"<meta charset='UTF-8'>" +
-				"<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
-				"<title>Thanh toán thành công</title>" +
-				"<style>" +
-				"body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }" +
-				".container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; max-width: 500px; }" +
-				".success-icon { width: 80px; height: 80px; margin: 0 auto 20px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; }" +
-				".success-icon svg { width: 50px; height: 50px; color: white; }" +
-				"h1 { color: #10b981; margin: 20px 0; }" +
-				"p { color: #666; margin: 10px 0; }" +
-				".order-id { background: #f3f4f6; padding: 10px; border-radius: 5px; margin: 20px 0; font-weight: bold; }" +
-				"button { background: #667eea; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 20px; }" +
-				"button:hover { background: #5568d3; }" +
-				"</style>" +
-				"</head>" +
-				"<body>" +
-				"<div class='container'>" +
-				"<div class='success-icon'>" +
-				"<svg fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>" +
-				"</div>" +
-				"<h1>Thanh toán thành công!</h1>" +
-				"<p>" + message + "</p>" +
-				"<div class='order-id'>Mã đơn hàng: #" + orderId + "</div>" +
-				"<p>Cảm ơn bạn đã mua sắm tại cửa hàng của chúng tôi!</p>" +
-				"<button onclick=\"window.location.href='http://localhost:3002/iphoneshop/'\">Quay về trang chủ</button>" +
-				"</div>" +
-				"</body>" +
-				"</html>";
-		} else {
-			html = "<!DOCTYPE html>" +
-				"<html lang='vi'>" +
-				"<head>" +
-				"<meta charset='UTF-8'>" +
-				"<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
-				"<title>Thanh toán thất bại</title>" +
-				"<style>" +
-				"body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }" +
-				".container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; max-width: 500px; }" +
-				".error-icon { width: 80px; height: 80px; margin: 0 auto 20px; background: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; }" +
-				".error-icon svg { width: 50px; height: 50px; color: white; }" +
-				"h1 { color: #ef4444; margin: 20px 0; }" +
-				"p { color: #666; margin: 10px 0; }" +
-				"button { background: #667eea; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; margin: 10px; }" +
-				"button:hover { background: #5568d3; }" +
-				".button-secondary { background: #6b7280; }" +
-				".button-secondary:hover { background: #4b5563; }" +
-				"</style>" +
-				"</head>" +
-				"<body>" +
-				"<div class='container'>" +
-				"<div class='error-icon'>" +
-				"<svg fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg>" +
-				"</div>" +
-				"<h1>Thanh toán thất bại</h1>" +
-				"<p>" + message + "</p>" +
-				"<div>" +
-				"<button onclick=\"window.location.href='http://localhost:3002/iphoneshop/checkout'\">Thử lại</button>" +
-				"<button class='button-secondary' onclick=\"window.location.href='http://localhost:3002/iphoneshop/'\">Về trang chủ</button>" +
-				"</div>" +
-				"</div>" +
-				"</body>" +
-				"</html>";
-		}
-		
-		return html;
+		System.out.println("Final Payment Result - Success: " + isSuccess + ", Message: " + message + ", OrderId: " + orderId);
+		return new PaymentResult(isSuccess, message, orderId);
 	}
 }
 

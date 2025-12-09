@@ -20,40 +20,113 @@ const VNPayReturn = () => {
           params[key] = value
         })
         
+        console.log('VNPay Return - URL Params:', params)
+        console.log('VNPay Return - Full URL:', window.location.href)
+        
+        // Kiểm tra xem có status trong URL không (từ backend redirect)
+        const statusFromUrl = searchParams.get('status')
+        const messageFromUrl = searchParams.get('message')
+        const orderIdFromUrl = searchParams.get('orderId')
+        
+        if (statusFromUrl) {
+          // Đã được xử lý bởi backend, chỉ cần hiển thị kết quả
+          console.log('Status from URL (already processed by backend):', statusFromUrl)
+          console.log('Message from URL:', messageFromUrl)
+          console.log('OrderId from URL:', orderIdFromUrl)
+          
+          // Decode message nếu có (URL đã được encode)
+          const decodedMessage = messageFromUrl ? decodeURIComponent(messageFromUrl) : 'Đã xử lý thanh toán'
+          
+          setStatus(statusFromUrl)
+          setMessage(decodedMessage)
+          setOrderId(orderIdFromUrl)
+          
+          if (statusFromUrl === 'success') {
+            // Xóa cart sau khi thanh toán thành công
+            try {
+              await refreshCart()
+            } catch (cartError) {
+              console.warn('Error refreshing cart:', cartError)
+            }
+            
+            // Chuyển đến trang cảm ơn sau 5 giây
+            setTimeout(() => {
+              navigate('/thank-you')
+            }, 5000)
+          }
+          return
+        }
+        
+        // Nếu không có status, có nghĩa là VNPay redirect trực tiếp về đây
+        // Cần gọi API để xử lý
+        if (Object.keys(params).length === 0) {
+          console.warn('No params found in URL')
+          setStatus('error')
+          setMessage('Không tìm thấy thông tin thanh toán. Vui lòng kiểm tra lại.')
+          return
+        }
+        
         // Gọi API backend để xử lý callback
-        const response = await api.get('/vnpay/return', {
-          params: params
+        console.log('Calling API /api/vnpay/return with params:', params)
+        const response = await api.get('/api/vnpay/return', {
+          params: params,
+          timeout: 30000 // 30 seconds timeout
         })
         
+        console.log('VNPay Return API Response:', response)
         const data = response.data
+        console.log('VNPay Return Response Data:', data)
         
-        console.log('VNPay Return Response:', data)
-        
-        if (data.status === 'success') {
+        if (data && data.status === 'success') {
           // Thanh toán thành công
           setStatus('success')
-          setMessage('Thanh toán thành công!')
+          setMessage(data.message || 'Thanh toán thành công!')
           setOrderId(data.orderId)
           
           // Xóa cart sau khi thanh toán thành công
-          await refreshCart()
+          try {
+            await refreshCart()
+          } catch (cartError) {
+            console.warn('Error refreshing cart:', cartError)
+          }
           
           // Chuyển đến trang cảm ơn sau 2 giây
           setTimeout(() => {
             navigate('/thank-you')
           }, 2000)
-        } else if (data.status === 'failed') {
+        } else if (data && data.status === 'failed') {
           // Thanh toán thất bại
           setStatus('failed')
           setMessage(data.message || 'Thanh toán không thành công')
         } else {
           // Lỗi khác
           setStatus('error')
-          setMessage(data.message || 'Có lỗi xảy ra khi xử lý thanh toán')
+          setMessage(data?.message || 'Có lỗi xảy ra khi xử lý thanh toán')
         }
       } catch (error) {
         console.error('Error processing payment:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra khi xử lý thanh toán'
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response,
+          request: error.request,
+          config: error.config
+        })
+        
+        let errorMessage = 'Có lỗi xảy ra khi xử lý thanh toán'
+        
+        if (error.response) {
+          // Server responded with error
+          errorMessage = error.response.data?.message || error.response.data?.error || errorMessage
+          console.error('Server error response:', error.response.data)
+        } else if (error.request) {
+          // Request was made but no response received
+          errorMessage = 'Không nhận được phản hồi từ server. Vui lòng thử lại.'
+          console.error('No response received:', error.request)
+        } else {
+          // Something else happened
+          errorMessage = error.message || errorMessage
+        }
+        
         setStatus('error')
         setMessage(errorMessage)
       }

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
+import { ChatProvider } from './context/ChatContext'
 
 // Layout Components
 import Header from './components/layout/Header'
@@ -31,6 +32,7 @@ import PaymentGuide from './pages/PaymentGuide'
 import InstallmentGuide from './pages/InstallmentGuide'
 import Admin from './pages/Admin'
 import Shipper from './pages/Shipper'
+import Chat from './pages/Chat'
 import ChatbotWidget from './components/Chatbot'
 
 function AppContent() {
@@ -70,6 +72,7 @@ function AppContent() {
 
           {/* Utility Routes */}
           <Route path="/contact" element={<Contact />} />
+          <Route path="/chat" element={<Chat />} />
           <Route path="/search" element={<SearchResult />} />
 
           {/* Static Pages */}
@@ -103,7 +106,9 @@ function App() {
         {/* 2. Các Provider nằm bên trong Router */}
         <AuthProvider>
           <CartProvider>
-            <AppContent />
+            <ChatProvider>
+              <AppContent />
+            </ChatProvider>
           </CartProvider>
         </AuthProvider>
       </Router>

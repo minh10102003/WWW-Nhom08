@@ -64,15 +64,39 @@ public class GioHangApi  {
 	}
 	
 	@GetMapping("/addSanPham")
-	public ResponseObject addToCart(@RequestParam String id,HttpServletRequest request,HttpServletResponse response) {
+	public ResponseObject addToCart(@RequestParam String id, @RequestParam(required = false) String quantity, HttpServletRequest request,HttpServletResponse response) {
 		ResponseObject ro = new ResponseObject();
 		try {
+			// Debug: Print all request parameters
+			System.out.println("=== addSanPham Debug ===");
+			System.out.println("Request URL: " + request.getRequestURL() + "?" + request.getQueryString());
+			System.out.println("Product ID parameter: " + id);
+			System.out.println("Quantity parameter (raw): " + quantity);
+			System.out.println("Quantity parameter is null: " + (quantity == null));
+			System.out.println("Quantity parameter isEmpty: " + (quantity != null && quantity.isEmpty()));
+			
 			SanPham sp = sanPhamService.getSanPhamById(Long.parseLong(id));
 			if(sp == null || sp.getDonViKho() == 0)
 			{
 				ro.setStatus("false");
 				return ro;
 			}
+			
+			// Parse quantity, default to 1 if not provided
+			int qty = 1;
+			if(quantity != null && !quantity.isEmpty()) {
+				try {
+					qty = Integer.parseInt(quantity);
+					if(qty < 1) qty = 1;
+				} catch (NumberFormatException e) {
+					System.out.println("Error parsing quantity: " + e.getMessage());
+					qty = 1;
+				}
+			} else {
+				System.out.println("Quantity parameter is null or empty, using default: 1");
+			}
+			System.out.println("Final parsed quantity: " + qty);
+			
 			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 			boolean isAnonymous = (auth == null || 
 				auth.getPrincipal() == null || 
@@ -86,26 +110,36 @@ public class GioHangApi  {
 					boolean found = false;
 					for(int i=0;i<clientCookies.length;i++)
 					{
-						if(clientCookies[i].getName().equals(id))     //Neu san pham da co trong cookie tang so luong them 1
+						if(clientCookies[i].getName().equals(id))     //Neu san pham da co trong cookie tang so luong
 						{				
-							clientCookies[i].setValue(Integer.toString(Integer.parseInt(clientCookies[i].getValue())+1));
+							int currentQty = 1;
+							try {
+								currentQty = Integer.parseInt(clientCookies[i].getValue());
+							} catch (NumberFormatException e) {
+								currentQty = 1;
+							}
+							System.out.println("Updating existing cookie - old quantity: " + currentQty + ", adding: " + qty);
+							clientCookies[i].setValue(Integer.toString(currentQty + qty));
 							clientCookies[i].setPath("/iphoneshop");
 							clientCookies[i].setMaxAge(60*60*24*7);
 							response.addCookie(clientCookies[i]);
+							System.out.println("Final cookie quantity: " + clientCookies[i].getValue());
 							found = true;
 							break;
 						}
 					}
 					if(!found)   //Neu san pham ko co trong cookie,them vao cookie
 					{
-						Cookie c = new Cookie(id,"1");
+						System.out.println("Creating new cookie with quantity: " + qty);
+						Cookie c = new Cookie(id, Integer.toString(qty));
 						c.setPath("/iphoneshop");
 						c.setMaxAge(60*60*24*7);
 						response.addCookie(c);
 					}
 				} else {
 					// No cookies, create new one
-					Cookie c = new Cookie(id,"1");
+					System.out.println("No cookies found, creating new cookie with quantity: " + qty);
+					Cookie c = new Cookie(id, Integer.toString(qty));
 					c.setPath("/iphoneshop");
 					c.setMaxAge(60*60*24*7);
 					response.addCookie(c);
@@ -135,15 +169,19 @@ public class GioHangApi  {
 					ChiMucGioHang c = chiMucGioHangService.getChiMucGioHangBySanPhamAndGioHang(sp,g);
 					if(c== null)     //Neu khong tim chi muc gio hang, tao moi
 					{
+						System.out.println("Creating new cart item with quantity: " + qty);
 						c = new ChiMucGioHang();
 						c.setGioHang(g);
 						c.setSanPham(sp);
-						c.setSo_luong(1);
-					}else       //Neu san pham da co trong database tang so luong them 1
+						c.setSo_luong(qty);
+					}else       //Neu san pham da co trong database tang so luong
 					{
-						c.setSo_luong(c.getSo_luong()+1);
+						int oldQty = c.getSo_luong();
+						System.out.println("Updating existing cart item - old quantity: " + oldQty + ", adding: " + qty);
+						c.setSo_luong(c.getSo_luong() + qty);
 					}
 					c = chiMucGioHangService.saveChiMucGiohang(c);
+					System.out.println("Final cart item quantity: " + c.getSo_luong());
 				}
 			}
 			ro.setStatus("success");

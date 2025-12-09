@@ -14,6 +14,14 @@ const Cart = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Nếu user = null (đã logout), clear cart và không fetch
+    if (!user) {
+      setCartItems([])
+      setQuantities({})
+      setLoading(false)
+      return
+    }
+    // Chỉ fetch cart khi có user
     fetchCart()
   }, [user])
 

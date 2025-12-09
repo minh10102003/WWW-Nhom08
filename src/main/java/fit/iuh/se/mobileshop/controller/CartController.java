@@ -31,7 +31,7 @@ import fit.iuh.se.mobileshop.service.SanPhamService;
 
 @Controller
 @SessionAttributes("loggedInUser")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class CartController {
 	
 	@Autowired

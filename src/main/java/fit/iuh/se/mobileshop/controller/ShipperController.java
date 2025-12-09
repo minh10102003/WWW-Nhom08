@@ -15,7 +15,7 @@ import fit.iuh.se.mobileshop.service.NguoiDungService;
 @Controller
 @RequestMapping("/shipper")
 @SessionAttributes("loggedInUser")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class ShipperController {
 	
 	

@@ -1,4 +1,9 @@
 const Stores = () => {
+  // Helper function to create Google Maps URL from address
+  const getGoogleMapsUrl = (address) => {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+  }
+
   const stores = [
     {
       city: 'TP.HCM',
@@ -8,21 +13,24 @@ const Stores = () => {
           address: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM',
           phone: '028.1234.5678',
           hours: '8:00 - 22:00',
-          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Sửa chữa tại chỗ']
+          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Sửa chữa tại chỗ'],
+          mapsUrl: 'https://www.google.com/maps/place/123+Nguy%E1%BB%85n+Hu%E1%BB%87,+B%E1%BA%BFn+Ngh%C3%A9,+Qu%E1%BA%ADn+1,+Th%C3%A0nh+ph%E1%BB%91+H%E1%BB%93+Ch%C3%AD+Minh/@10.7743448,106.702848,17z/data=!3m1!4b1!4m6!3m5!1s0x31752f471fae0893:0x4a0c6395cc27f990!8m2!3d10.7743448!4d106.702848!16s%2Fg%2F11b8vfc96t?entry=ttu'
         },
         {
           name: 'Showroom Quận 7',
           address: '456 Nguyễn Thị Thập, Phường Tân Phú, Quận 7, TP.HCM',
           phone: '028.2345.6789',
           hours: '8:00 - 22:00',
-          features: ['Bãi đỗ xe', 'Thử máy miễn phí']
+          features: ['Bãi đỗ xe', 'Thử máy miễn phí'],
+          mapsUrl: getGoogleMapsUrl('456 Nguyễn Thị Thập, Phường Tân Phú, Quận 7, TP.HCM')
         },
         {
           name: 'Showroom Quận 10',
           address: '789 Lý Thái Tổ, Phường 8, Quận 10, TP.HCM',
           phone: '028.3456.7890',
           hours: '8:00 - 22:00',
-          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Sửa chữa tại chỗ', 'Trả góp 0%']
+          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Sửa chữa tại chỗ', 'Trả góp 0%'],
+          mapsUrl: getGoogleMapsUrl('789 Lý Thái Tổ, Phường 8, Quận 10, TP.HCM')
         }
       ]
     },
@@ -34,14 +42,16 @@ const Stores = () => {
           address: '321 Tràng Tiền, Phường Tràng Tiền, Quận Hoàn Kiếm, Hà Nội',
           phone: '024.1234.5678',
           hours: '8:00 - 22:00',
-          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Sửa chữa tại chỗ']
+          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Sửa chữa tại chỗ'],
+          mapsUrl: getGoogleMapsUrl('321 Tràng Tiền, Phường Tràng Tiền, Quận Hoàn Kiếm, Hà Nội')
         },
         {
           name: 'Showroom Cầu Giấy',
           address: '654 Trần Duy Hưng, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội',
           phone: '024.2345.6789',
           hours: '8:00 - 22:00',
-          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Trả góp 0%']
+          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Trả góp 0%'],
+          mapsUrl: getGoogleMapsUrl('654 Trần Duy Hưng, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội')
         }
       ]
     },
@@ -53,7 +63,8 @@ const Stores = () => {
           address: '987 Nguyễn Văn Linh, Phường Nam Dương, Quận Hải Châu, Đà Nẵng',
           phone: '0236.1234.567',
           hours: '8:00 - 22:00',
-          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Sửa chữa tại chỗ']
+          features: ['Bãi đỗ xe', 'Thử máy miễn phí', 'Sửa chữa tại chỗ'],
+          mapsUrl: getGoogleMapsUrl('987 Nguyễn Văn Linh, Phường Nam Dương, Quận Hải Châu, Đà Nẵng')
         }
       ]
     }
@@ -126,9 +137,14 @@ const Stores = () => {
                           ))}
                         </div>
                       </div>
-                      <button className="mt-4 w-full px-4 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:opacity-90 transition-all">
+                      <a
+                        href={store.mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 w-full px-4 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:opacity-90 transition-all text-center block"
+                      >
                         Xem bản đồ
-                      </button>
+                      </a>
                     </div>
                   </div>
                 ))}
@@ -170,7 +186,7 @@ const Stores = () => {
             Cần hỗ trợ tìm showroom gần nhất?
           </p>
           <p className="text-xl font-bold text-primary">
-            Hotline: 1900.5301 | Email: showroom@anhhaoiphone.com
+            Hotline: 1900.5301 | Email: showroom@iuhmobile.com
           </p>
         </section>
       </div>

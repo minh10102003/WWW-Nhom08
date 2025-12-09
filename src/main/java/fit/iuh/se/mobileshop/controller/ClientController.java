@@ -17,7 +17,7 @@ import fit.iuh.se.mobileshop.service.NguoiDungService;
 
 @Controller
 @SessionAttributes("loggedInUser")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class ClientController {
 
 	@Autowired
