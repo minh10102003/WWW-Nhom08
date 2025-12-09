@@ -116,28 +116,15 @@ const ProductDetail = () => {
 
   const handleBuyNow = async () => {
     try {
-      // Thêm sản phẩm vào giỏ hàng trước
-      const addResult = await addToCart(id)
-      if (!addResult.success) {
-        // If not logged in and API requires login, redirect to login
-        if (addResult.error && addResult.error.includes('login')) {
-          navigate('/login')
-        } else {
-          alert(addResult.error || 'Có lỗi xảy ra khi thêm vào giỏ hàng')
-        }
-        return
+      // Lưu thông tin sản phẩm "mua ngay" vào localStorage
+      // Để checkout biết chỉ tạo đơn hàng với sản phẩm này
+      const buyNowInfo = {
+        productId: id,
+        quantity: quantity
       }
-
-      // Nếu số lượng > 1, cập nhật số lượng
-      if (quantity > 1) {
-        const updateResult = await updateCart(id, quantity)
-        if (!updateResult.success) {
-          alert(updateResult.error || 'Có lỗi xảy ra khi cập nhật số lượng')
-          return
-        }
-      }
-
-      // Chuyển đến trang checkout
+      localStorage.setItem('buyNowProduct', JSON.stringify(buyNowInfo))
+      
+      // Chuyển đến trang checkout (không cần thêm vào giỏ hàng)
       navigate('/checkout')
     } catch (error) {
       console.error('Buy now error:', error)

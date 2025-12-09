@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { orderApi, vnpayApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -15,6 +15,15 @@ const Checkout = () => {
   const { user } = useAuth()
   const { refreshCart } = useCart()
   const navigate = useNavigate()
+  
+  // Kiểm tra nếu có sản phẩm "mua ngay" khi component mount
+  useEffect(() => {
+    const buyNowProduct = localStorage.getItem('buyNowProduct')
+    if (buyNowProduct) {
+      // Có sản phẩm "mua ngay", giữ lại để dùng khi tạo đơn hàng
+      console.log('Checkout với sản phẩm "mua ngay"')
+    }
+  }, [])
 
   const handleChange = (e) => {
     setFormData({
@@ -28,13 +37,30 @@ const Checkout = () => {
     setLoading(true)
 
     try {
-      // Tạo đơn hàng với phương thức thanh toán
-      const orderData = {
+      // Kiểm tra nếu có sản phẩm "mua ngay"
+      const buyNowProduct = localStorage.getItem('buyNowProduct')
+      let orderData = {
         ...formData,
         paymentMethod: method
       }
       
+      // Nếu có sản phẩm "mua ngay", thêm thông tin vào orderData
+      if (buyNowProduct) {
+        try {
+          const buyNowInfo = JSON.parse(buyNowProduct)
+          orderData.buyNowProductId = buyNowInfo.productId
+          orderData.buyNowQuantity = buyNowInfo.quantity
+        } catch (e) {
+          console.error('Error parsing buyNowProduct:', e)
+        }
+      }
+      
       const response = await orderApi.create(orderData)
+      
+      // Xóa thông tin "mua ngay" sau khi tạo đơn hàng thành công
+      if (buyNowProduct) {
+        localStorage.removeItem('buyNowProduct')
+      }
       if (response.data && response.data.status === 'success') {
         const order = response.data.data
         
