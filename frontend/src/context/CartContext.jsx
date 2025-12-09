@@ -19,7 +19,14 @@ export const CartProvider = ({ children }) => {
   const { user } = useAuth()
 
   useEffect(() => {
-    // Always fetch cart, regardless of user status (handles both logged in and anonymous)
+    // If user is null (logged out), clear cart immediately and DON'T fetch
+    if (!user) {
+      setCart([])
+      setCartCount(0)
+      console.log('✓ Cart cleared (user logged out) - not fetching cart')
+      return
+    }
+    // Only fetch cart when user exists (logged in or anonymous with cookies)
     fetchCart()
   }, [user])
 
@@ -47,9 +54,9 @@ export const CartProvider = ({ children }) => {
     }
   }
 
-  const addToCart = async (id) => {
+  const addToCart = async (id, quantity = 1) => {
     try {
-      const response = await cartApi.addToCart(id)
+      const response = await cartApi.addToCart(id, quantity)
       if (response.data && response.data.status === 'success') {
         // Reload cart to get updated items and count
         // Use a small delay to ensure backend has processed the cookie/DB update

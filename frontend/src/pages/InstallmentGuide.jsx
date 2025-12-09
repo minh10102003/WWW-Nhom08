@@ -291,7 +291,7 @@ const InstallmentGuide = () => {
             Đội ngũ tư vấn của chúng tôi sẵn sàng hỗ trợ bạn 24/7
           </p>
           <p className="text-xl font-bold">
-            Hotline: 1900.5301 | Email: trago@anhhaoiphone.com
+            Hotline: 1900.5301 | Email: trago@iuhmobile.com
           </p>
           <p className="mt-4 text-sm opacity-75">
             Hoặc đến trực tiếp showroom để được tư vấn và làm thủ tục ngay

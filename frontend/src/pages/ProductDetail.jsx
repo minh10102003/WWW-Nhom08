@@ -100,7 +100,8 @@ const ProductDetail = () => {
 
   const handleAddToCart = async () => {
     // Allow anonymous users to add to cart (stored in cookies)
-    const result = await addToCart(id)
+    console.log('ProductDetail - Adding to cart - id:', id, 'quantity:', quantity)
+    const result = await addToCart(id, quantity)
     if (result.success) {
       // Show success message
       alert('Đã thêm vào giỏ hàng!')
