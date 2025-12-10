@@ -1,13 +1,10 @@
 import axios from 'axios'
 
 // --- CẤU HÌNH ĐƯỜNG DẪN (QUAN TRỌNG) ---
-// Sử dụng đường dẫn tương đối để Vite Proxy hoạt động
-// React sẽ hiểu là: http://localhost:3000/iphoneshop... -> Proxy chuyển sang 8080
 
 const BACKEND_URL = '/iphoneshop';       // Dùng cho Login, Register, Logout
 const API_BASE_URL = '/iphoneshop/api';  // Dùng cho dữ liệu (Sản phẩm, Giỏ hàng...)
 
-// Tạo instance axios cho các API dữ liệu
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -17,7 +14,6 @@ const api = axios.create({
 })
 
 // --- 1. REQUEST INTERCEPTOR ---
-// Tự động đính kèm Token (nếu bạn dùng JWT)
 api.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('token')
@@ -32,7 +28,6 @@ api.interceptors.request.use(
 )
 
 // --- 2. RESPONSE INTERCEPTOR ---
-// Xử lý khi Token hết hạn hoặc lỗi 401
 api.interceptors.response.use(
     (response) => response,
     (error) => {

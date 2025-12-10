@@ -32,7 +32,21 @@ const AdminCategories = () => {
       setLoading(false)
     }
   }
-
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault()
+  //   setError('')
+  //
+  //   try {
+  //     if (editingCategory) {
+  //       await adminCategoryApi.update({ ...editingCategory, ...formData })
+  //     } else {
+  //       await adminCategoryApi.save(formData)
+  //     }
+  //     setShowModal(false)
+  //   } catch (err) {
+  //     setError(err.response?.data?.errorMessages || 'Có lỗi xảy ra')
+  //   }
+  // }
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')

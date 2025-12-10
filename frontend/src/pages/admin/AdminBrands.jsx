@@ -19,9 +19,9 @@ const AdminBrands = () => {
     try {
       setLoading(true)
       const response = await adminBrandApi.getAll(page)
-      // Sắp xếp theo ID giảm dần (mới nhất lên trên - ID lớn hơn = mới hơn)
+      // Soft by ID
       const sortedBrands = (response.data.content || []).sort((a, b) => {
-        return (b.id || 0) - (a.id || 0) // Giảm dần
+        return (b.id || 0) - (a.id || 0)
       })
       setBrands(sortedBrands)
       setTotalPages(response.data.totalPages || 1)

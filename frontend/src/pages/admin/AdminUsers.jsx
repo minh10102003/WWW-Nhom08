@@ -7,6 +7,7 @@ const AdminUsers = () => {
     { tenVaiTro: 'ROLE_MEMBER' },
     { tenVaiTro: 'ROLE_ADMIN' },
     { tenVaiTro: 'ROLE_SHIPPER' }
+    // { tenvaiTro: "ROLE_USER"}
   ]
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
